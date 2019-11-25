@@ -73,6 +73,29 @@ def find_prefix(root, prefix: str) -> Tuple[bool, int]:
     # Well, we are here means we have found the prefix. Return true to indicate that
     # And also the counter of the last node. This indicates how many words have this
     # prefix
+
+    
+def letter_missing(root,query2,level,one_dist_list,word):
+    dist=0
+    if not root.children:
+        res=''
+        query2[level]='*'
+        for i in range(len(query2)):
+            res+=query2[i]
+        for i in range(len(res)):
+            if res[i]=='*':
+                result=res[:i]
+                break
+        dist=distance(result,word)
+        if dist==1:
+            one_dist_list.append(result)
+    for i in range(len(root.children)):
+        if root.children[i]:
+            query2[level]=root.children[i].char
+            letter_missing(root.children[i],query2,level+1,one_dist_list,word)
+
+
+            
 def lev_dist(root,word):
     node=root
     query1=word
@@ -95,6 +118,7 @@ def lev_dist(root,word):
                 if(dist==1) and node.word_finished==True:
                     one_distance_list.append(query2)
                 parent=node
+
     for child in parent.children:
         parent= child
         query2=query2+parent.char
@@ -103,7 +127,9 @@ def lev_dist(root,word):
             one_distance_list.append(query2)
         parent=child
     if len(one_distance_list)==0:
-            print('Not found')
+        letter_missing(root,['*']*40,0,one_distance_list,word)
+    if len(one_distance_list)==0:
+        print('Not Found')
     return one_distance_list
 
 
@@ -123,6 +149,7 @@ if __name__ == "__main__":
     val = ("ಅವನು", "M")
     mycursor.execute(sql, val)
     val=("ಅವಳು", "F")
+    add(root,'ಅವಳು')
     mycursor.execute(sql, val)
     val=("ಆತ", "M")
     mycursor.execute(sql, val)
@@ -157,44 +184,49 @@ if __name__ == "__main__":
     myresult = mycursor.fetchall()
     for x in myresult:
       print(x)
-
+    
     no_of_correct=0
     no_of_wrong=0
     is_wrong=False
 
-    print(find_prefix(root,'ಕುಳಿತುಕೊಂಡ'))
-    print(lev_dist(root,'ಕುಳಿತುಕೊಂ'))
-    
     user_input_list=input('Enter text\n')
     text_list=user_input_list.split()
     tokenize_list=[]
     for word in text_list:
         word=''.join(c for c in word if c not in '.,?!')
         tokenize_list.append(word)
-        if find_prefix(root,word)=='Not found':
+        if find_prefix(root,word)=='Not found' or find_prefix(root,word)!=word:
             print(word)
             no_of_wrong+=1
             is_wrong=True
         else:
+            is_wrong=False
             no_of_correct+=1
             
         if is_wrong==True:
             print('Pick from the below list')
             print(lev_dist(root,word))
             
-    input_text=user_input_list.split('.')
-    del input_text[-1]
-    print(input_text)
+    input_text=[]
+    res=''
+    for word in text_list:
+        res+=word+' '
+        if '?' in word or '.' in word  or '!' in word or ',' in word:
+            input_text.append(res)
+            res=''
+    input1_text=[]
+    for sentence in input_text:
+        input1_text.append(sentence[:-2])
     form1=''
     form2=''
-    for l in input_text:
+    k=0
+    for l in input1_text:
         string=''
         for i in range(len(l)):
             if l[i].isspace():
-                break
+                string=''
             else:
                 string+=l[i]
-            print(string,)
             sql1 = "SELECT value FROM pronoun WHERE word = %s"
             adr1 = (string, )
             mycursor.execute(sql1, adr1)
@@ -202,7 +234,8 @@ if __name__ == "__main__":
             for x in myresult:
                 if x!=[]:
                     form1=x
-                    print(x)
+                    print(string)
+                    print(form1)
             sql2 = "SELECT value FROM verb WHERE word = %s"
             adr2 = (string, )
             mycursor.execute(sql2, adr2)
@@ -210,10 +243,11 @@ if __name__ == "__main__":
             for x in myresult:
                 if x!=[]:
                     form2=x
-                    print(x)
-            if form1==form2:
-                no_of_correct+=1
-            else:
+                    print(string)
+                    print(form2)
+            if form1==form2 and form1!='' and form2!='':
+                pass
+            elif form1!='' and form2!='' and form1!=form2:
                 no_of_wrong+=1
     print('WRONG:',no_of_wrong)
     print('CORRECT:',no_of_correct)
